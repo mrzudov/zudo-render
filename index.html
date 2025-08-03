@@ -1,54 +1,88 @@
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zudo Render Demo</title>
-    <style>
-        body {
-            background-color: #111;
-            color: limegreen;
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding: 40px;
-        }
-        h1 { color: red; }
-        .logo {
-            font-size: 32px;
-            font-weight: bold;
-            color: #0f0;
-            margin-bottom: 40px;
-        }
-        .upload-box {
-            margin: 20px auto;
-            padding: 20px;
-            background: #222;
-            border: 2px dashed #0f0;
-            max-width: 400px;
-        }
-        input[type="file"], input[type="text"] {
-            margin: 10px 0;
-            padding: 10px;
-            width: 100%;
-        }
-        button {
-            padding: 10px 20px;
-            background-color: red;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-    </style>
+<meta charset="UTF-8">
+<title>Zudo Render – AI Kiến Tạo Đỉnh Cao</title>
+<style>
+body {
+background-color: #000;
+color: #eee;
+font-family: 'Arial', sans-serif;
+text-align: center;
+padding: 40px;
+}
+h1 {
+color: #ff0000;
+text-shadow: 2px 2px 6px #0f0;
+}
+input, textarea, button {
+margin: 10px;
+padding: 10px;
+font-size: 16px;
+width: 80%;
+max-width: 500px;
+border: none;
+border-radius: 6px;
+}
+input[type="file"] {
+background-color: #222;
+color: #0f0;
+}
+textarea {
+height: 100px;
+}
+button {
+background-color: #ff0000;
+color: #fff;
+cursor: pointer;
+}
+button:hover {
+background-color: #0f0;
+color: #000;
+}
+#preview {
+margin-top: 30px;
+border: 2px solid #0f0;
+padding: 10px;
+display: none;
+}
+img {
+max-width: 100%;
+height: auto;
+}
+</style>
 </head>
 <body>
-    <div class="logo">Mr.Zudo Render</div>
-    <h1>Demo giao diện phối đỏ – đen – xanh lá</h1>
-    <div class="upload-box">
-        <input type="file" id="fileInput" /><br />
-        <input type="text" placeholder="Nhập prompt render..." /><br />
-        <button onclick="alert('Tính năng AI Render đang demo!')">Render bằng AI</button>
-        <button onclick="alert('Chức năng thanh toán MoMo demo!')">Thanh toán MoMo</button>
-    </div>
+
+<h1>Zudo Render</h1>
+<p><i>AI kiến tạo phối cảnh đỉnh cao</i></p>
+
+<input type="file" id="imageInput" accept="image/*"><br>
+<textarea id="promptInput" placeholder="Nhập prompt mô tả cảnh cần render..."></textarea><br>
+<button onclick="renderImage()">Render bằng AI</button>
+
+<div id="preview">
+<h2>Ảnh Render:</h2>
+<img id="renderedImage" src="">
+</div>
+
+<script>
+function renderImage() {
+const prompt = document.getElementById('promptInput').value;
+const imageInput = document.getElementById('imageInput');
+if (!prompt || !imageInput.files[0]) {
+alert("Vui lòng chọn ảnh và nhập prompt!");
+return;
+}
+
+// Hiện tạm ảnh mẫu (demo)
+document.getElementById("renderedImage").src = "https://picsum.photos/600/400?grayscale";
+document.getElementById("preview").style.display = "block";
+
+// 🔧 TODO: Tích hợp AI thật bằng API sau
+alert("Demo tạm ảnh mẫu – sắp tới sẽ tích hợp AI thật (Replicate / Sora / SDXL)");
+}
+</script>
+
 </body>
 </html>
