@@ -1,0 +1,54 @@
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zudo Render Demo</title>
+    <style>
+        body {
+            background-color: #111;
+            color: limegreen;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 40px;
+        }
+        h1 { color: red; }
+        .logo {
+            font-size: 32px;
+            font-weight: bold;
+            color: #0f0;
+            margin-bottom: 40px;
+        }
+        .upload-box {
+            margin: 20px auto;
+            padding: 20px;
+            background: #222;
+            border: 2px dashed #0f0;
+            max-width: 400px;
+        }
+        input[type="file"], input[type="text"] {
+            margin: 10px 0;
+            padding: 10px;
+            width: 100%;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: red;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="logo">Mr.Zudo Render</div>
+    <h1>Demo giao diện phối đỏ – đen – xanh lá</h1>
+    <div class="upload-box">
+        <input type="file" id="fileInput" /><br />
+        <input type="text" placeholder="Nhập prompt render..." /><br />
+        <button onclick="alert('Tính năng AI Render đang demo!')">Render bằng AI</button>
+        <button onclick="alert('Chức năng thanh toán MoMo demo!')">Thanh toán MoMo</button>
+    </div>
+</body>
+</html>
