@@ -1,48 +1,51 @@
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
-const axios = require('axios');
+const fetch = require('node-fetch');
 require('dotenv').config();
 
 const app = express();
+const upload = multer();
 app.use(cors());
+app.use(express.json());
 
-const upload = multer(); // Nhận form-data
-
-app.post('/render', upload.single('image'), async (req, res) => {
-  const { prompt } = req.body;
-  const imageBuffer = req.file?.buffer;
-
-  if (!imageBuffer) {
-    return res.status(400).json({ error: 'Không nhận được ảnh nào cả.' });
-  }
-
-  try {
-    const apiResponse = await axios.post(
-      'https://api.laozhang.ai/sdapi/v1/img2img',
-      {
-        init_images: [`data:image/png;base64,${imageBuffer.toString('base64')}`],
-        prompt: prompt || "masterpiece, architectural rendering"
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${process.env.SORA_API_KEY}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    );
-
-    const resultBase64 = apiResponse.data?.images?.[0];
-    res.json({ image_url: result.data?.image });
-  } catch (error) {
-    res.status(500).json({ error: 'Lỗi từ API render hoặc server.' });
-  }
-  
+app.get('/', (req, res) => {
+  res.send('Zudo render backend hoạt động');
 });
 
-app.get("/", (req, res) => {
-  res.send("✅ Zudo Render backend hoạt động!");
+app.post('/render', upload.single('image'), async (req, res) => {
+  const imageBuffer = req.file.buffer;
+  const prompt = req.body.prompt;
+
+  try {
+    const base64Image = imageBuffer.toString('base64');
+
+    const response = await fetch('https://api.laozhang.ai/generate/sora-img', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.SORA_API_KEY}`
+      },
+      body: JSON.stringify({
+        image: `data:image/png;base64,${base64Image}`,
+        prompt: prompt
+      })
+    });
+
+    const result = await response.json();
+
+    // 👉 CHÍNH DÒNG NÀY: log kết quả trả về từ LaoZhang
+    console.log("Kết quả từ LaoZhang:", result);
+
+    res.json({ image_url: result.data?.image });
+
+  } catch (error) {
+    console.error('Lỗi khi gửi request tới LaoZhang:', error);
+    res.status(500).json({ error: 'Lỗi render ❌: Lỗi mạng hoặc server' });
+  }
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`✅ Zudo Server đang chạy ở cổng ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`Zudo render backend chạy tại cổng ${PORT}`);
+});
