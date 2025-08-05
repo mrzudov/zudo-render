@@ -1,60 +1,43 @@
-const express = require("express");
-const multer = require("multer");
-const cors = require("cors");
-const fs = require("fs");
-const axios = require("axios");
-const path = require("path");
+const express = require('express');
+const cors = require('cors');
+const multer = require('multer');
+const axios = require('axios');
+require('dotenv').config();
 
 const app = express();
-const upload = multer({ dest: "uploads/" });
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
-// Dùng API Key mới
-const API_KEY = "sk-hfHQQPT05bIHWaWs63Cf861622Bc4a3bAa8eD80b868dD024";
+const upload = multer(); // Nhận form-data
 
-app.post("/render", upload.single("image"), async (req, res) => {
-  const prompt = req.body.prompt;
-  const imagePath = req.file?.path;
+app.post('/render', upload.single('image'), async (req, res) => {
+  const { prompt } = req.body;
+  const imageBuffer = req.file?.buffer;
 
-  if (!prompt || !imagePath) {
-    return res.status(400).json({ error: "Thiếu prompt hoặc hình ảnh" });
+  if (!imageBuffer) {
+    return res.status(400).json({ error: 'Không nhận được ảnh nào cả.' });
   }
 
   try {
-    const imgData = fs.readFileSync(imagePath, { encoding: "base64" });
-
-    const response = await axios.post(
-      "https://api.laozhang.ai/sdapi/v1/img2img",
+    const apiResponse = await axios.post(
+      'https://api.laozhang.ai/sdapi/v1/img2img',
       {
-        init_images: ["data:image/png;base64," + imgData],
-        prompt: prompt,
-        denoising_strength: 0.75,
+        init_images: [`data:image/png;base64,${imageBuffer.toString('base64')}`],
+        prompt: prompt || "masterpiece, architectural rendering"
       },
       {
         headers: {
-          Authorization: `Bearer ${API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        timeout: 60000, // chờ tối đa 60s
+          'Authorization': `Bearer ${process.env.SORA_API_KEY}`,
+          'Content-Type': 'application/json'
+        }
       }
     );
 
-    const outputImage = response.data?.images?.[0];
-    if (!outputImage) {
-      return res.status(500).json({ error: "Không nhận được ảnh từ AI" });
-    }
-
-    res.json({ image_url: "data:image/png;base64," + outputImage });
-  } catch (err) {
-    console.error("Render lỗi:", err?.message);
-    res.status(500).json({ error: "Lỗi mạng hoặc server", detail: err?.message });
-  } finally {
-    if (imagePath) fs.unlinkSync(imagePath); // xoá hình gốc
+    const resultBase64 = apiResponse.data?.images?.[0];
+    res.json({ image_url: `data:image/png;base64,${resultBase64}` });
+  } catch (error) {
+    res.status(500).json({ error: 'Lỗi từ API render hoặc server.' });
   }
 });
 
-app.listen(3000, () => {
-  console.log("✅ Zudo Render backend đang chạy tại http://localhost:3000");
-});
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`✅ Zudo Server đang chạy ở cổng ${PORT}`));
