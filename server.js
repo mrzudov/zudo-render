@@ -8,7 +8,7 @@ const app = express();
 const upload = multer({ dest: "uploads/" });
 app.use(cors());
 
-const API_KEY = "sk-9Wx3RShor70o59B3B97a62281239463e9dAf9d70A38b9fA8"; // LaoZhang API key
+const API_KEY = "sk-hfHQQPT05bIHWaWs63Cf861622Bc4a3bAa8eD80b868dD024"; // LaoZhang API key
 
 app.post("/render", upload.single("image"), async (req, res) => {
   const prompt = req.body.prompt;
