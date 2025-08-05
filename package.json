@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Backend đơn giản cho Zudo Render - kết nối tới Sora API qua LaoZhang",
   "main": "server.js",
+  "type": "module",
   "scripts": {
     "start": "node server.js"
   },
