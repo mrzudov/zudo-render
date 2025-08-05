@@ -33,7 +33,7 @@ app.post("/render", upload.single("image"), async (req, res) => {
     );
 
     const resultImageUrl = response.data?.data?.url;
-    console.log("✅ Kết quả từ LaoZhang:", resultImageUrl);
+    console.log("✅ Toàn bộ phản hồi từ LaoZhang:", response.data);
 
     if (resultImageUrl) {
       res.json({ image_url: resultImageUrl });
