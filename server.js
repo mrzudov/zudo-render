@@ -1,50 +1,53 @@
 const express = require("express");
-const cors = require("cors");
 const multer = require("multer");
-const dotenv = require("dotenv");
+const cors = require("cors");
 const fs = require("fs");
-
-dotenv.config();
+const axios = require("axios");
+const FormData = require("form-data");
 
 const app = express();
-const upload = multer();
+const upload = multer({ dest: "uploads/" });
 app.use(cors());
-app.use(express.json());
 
-app.get("/", (req, res) => {
-  res.send("Zudo Render backend hoạt động.");
-});
+const API_KEY = "sk-hfHQQPT05bIHWaWs63Cf861622Bc4a3bAa8eD80b868dD024"; // <- Mày đổi lại nếu cần
 
 app.post("/render", upload.single("image"), async (req, res) => {
-  const imageBuffer = req.file.buffer;
   const prompt = req.body.prompt;
+  const imagePath = req.file.path;
 
   try {
-    const base64Image = imageBuffer.toString("base64");
+    const formData = new FormData();
+    formData.append("image", fs.createReadStream(imagePath));
+    formData.append("prompt", prompt);
 
-    const response = await fetch("https://api.laozhang.ai/generate/sora-img", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.SORA_API_KEY}`,
-      },
-      body: JSON.stringify({
-        image: `data:image/png;base64,${base64Image}`,
-        prompt: prompt,
-      }),
-    });
+    const response = await axios.post(
+      "https://api.laozhang.ai/generate/sora-img",
+      formData,
+      {
+        headers: {
+          ...formData.getHeaders(),
+          Authorization: `Bearer ${API_KEY}`
+        },
+        timeout: 60000 // 60s timeout
+      }
+    );
 
-    const result = await response.json();
-    console.log("Kết quả từ LaoZhang:", result);
+    const resultImageUrl = response.data?.data?.url;
+    console.log("✅ Kết quả từ LaoZhang:", resultImageUrl);
 
-    res.json({ image_url: result.data?.image });
-  } catch (error) {
-    console.error("Lỗi render:", error);
-    res.status(500).json({ error: "Lỗi khi render ❌" });
+    if (resultImageUrl) {
+      res.json({ image_url: resultImageUrl });
+    } else {
+      res.status(500).json({ error: "Không nhận được ảnh từ API LaoZhang" });
+    }
+  } catch (err) {
+    console.error("❌ Lỗi khi render:", err.message);
+    res.status(500).json({ error: "Lỗi khi render", details: err.message });
+  } finally {
+    fs.unlinkSync(imagePath); // Xoá ảnh tạm
   }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Zudo render backend chạy tại cổng ${PORT}`);
+app.listen(3000, () => {
+  console.log("Zudo Render backend hoạt động tại http://localhost:3000");
 });
