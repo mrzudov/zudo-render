@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
-const fetch = require('node-fetch');
+import fetch from "node-fetch";
 require('dotenv').config();
 
 const app = express();
