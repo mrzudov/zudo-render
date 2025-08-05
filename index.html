@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Zudo Render</title>
+</head>
+<body style="background:black; color:white; font-family:sans-serif; text-align:center;">
+  <h1>Zudo Render</h1>
+  <p>Upload sơ phát + Prompt để AI render (Sora via LaoZhang)</p>
+  <input type="file" id="imageInput"><br><br>
+  <textarea id="promptInput" placeholder="Nhập prompt..." rows="4" cols="50"></textarea><br><br>
+  <button onclick="render()">Render</button>
+  <p id="status"></p>
+  <img id="outputImage" style="max-width:90%; margin-top:20px;"/>
+
+<script>
+  async function render() {
+    const fileInput = document.getElementById('imageInput');
+    const prompt = document.getElementById('promptInput').value;
+    const status = document.getElementById('status');
+    const outputImage = document.getElementById('outputImage');
+
+    if (!fileInput.files[0]) {
+      alert("Chọn ảnh trước");
+      return;
+    }
+
+    status.innerText = "Đang render...";
+
+    const formData = new FormData();
+    formData.append("image", fileInput.files[0]);
+    formData.append("prompt", prompt);
+
+    const res = await fetch("https://zudo-render-backend.onrender.com/render", {
+      method: "POST",
+      body: formData
+    });
+
+    const data = await res.json();
+    if (data.image_url) {
+      outputImage.src = data.image_url;
+      status.innerText = "Render xong!";
+    } else {
+      status.innerText = "Render thất bại.";
+    }
+  }
+</script>
+</body>
+</html>
