@@ -37,6 +37,11 @@ app.post('/render', upload.single('image'), async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: 'Lỗi từ API render hoặc server.' });
   }
+  
+});
+
+app.get("/", (req, res) => {
+  res.send("✅ Zudo Render backend hoạt động!");
 });
 
 const PORT = process.env.PORT || 3000;
