@@ -1,63 +1,122 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
   <title>Zudo Render</title>
+  <style>
+    body {
+      font-family: Arial;
+      background-color: #111;
+      color: #fff;
+      text-align: center;
+      padding: 20px;
+    }
+    .tab {
+      margin: 10px;
+      padding: 10px 20px;
+      background: #444;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+    .tab.active {
+      background: #00aa66;
+    }
+    textarea {
+      width: 90%;
+      height: 100px;
+      font-size: 16px;
+      margin-top: 10px;
+      padding: 10px;
+    }
+    input[type="file"] {
+      margin: 10px;
+    }
+    #preview, #result {
+      margin-top: 20px;
+    }
+    img {
+      max-width: 300px;
+      margin: 10px;
+      border: 2px solid #555;
+    }
+    #status {
+      margin-top: 20px;
+      color: yellow;
+    }
+  </style>
 </head>
 <body>
-  <h2>Zudo Render</h2>
-  <form id="renderForm">
-    <input type="file" id="imageInput" accept="image/*" required /><br />
-    <input type="text" id="promptInput" placeholder="Nhập prompt mô tả..." required /><br />
-    <button type="submit">Render</button>
+  <h1>Zudo Render</h1>
+
+  <div>
+    <button class="tab active" onclick="switchTab('img2img')">🖼️ Image to Image</button>
+    <button class="tab" onclick="switchTab('txt2img')">📝 Text to Image</button>
+  </div>
+
+  <form id="img2img-form">
+    <input type="file" id="image" name="image" accept="image/*"><br>
+    <textarea id="prompt1" placeholder="Nhập prompt cho ảnh gốc..."></textarea><br>
+    <button type="submit">Render ảnh từ ảnh</button>
   </form>
 
-  <p id="status">⏳ Chờ upload...</p>
-  <h3>Ảnh khách upload:</h3>
-  <img id="uploadedImage" style="max-width: 300px;"/>
+  <form id="txt2img-form" style="display:none">
+    <textarea id="prompt2" placeholder="Nhập prompt để tạo ảnh từ mô tả..."></textarea><br>
+    <button type="submit">Render ảnh từ mô tả</button>
+  </form>
 
-  <h3>Ảnh sau khi render:</h3>
-  <img id="resultImage" style="max-width: 300px;"/>
+  <div id="status"></div>
+  <div id="preview"></div>
+  <div id="result"></div>
 
   <script>
-    const form = document.getElementById('renderForm');
-    const imageInput = document.getElementById('imageInput');
-    const promptInput = document.getElementById('promptInput');
-    const statusText = document.getElementById('status');
-    const uploadedImage = document.getElementById('uploadedImage');
-    const resultImage = document.getElementById('resultImage');
+    function switchTab(tab) {
+      document.querySelectorAll(".tab").forEach(btn => btn.classList.remove("active"));
+      document.getElementById("img2img-form").style.display = tab === 'img2img' ? 'block' : 'none';
+      document.getElementById("txt2img-form").style.display = tab === 'txt2img' ? 'block' : 'none';
+      document.querySelector(`.tab[onclick*="${tab}"]`).classList.add("active");
+      document.getElementById("result").innerHTML = "";
+      document.getElementById("preview").innerHTML = "";
+      document.getElementById("status").innerText = "";
+    }
 
-    form.addEventListener('submit', async (e) => {
+    document.getElementById("img2img-form").addEventListener("submit", async (e) => {
       e.preventDefault();
-      statusText.textContent = "⏳ Đang gửi lên Zudo Render...";
-      const file = imageInput.files[0];
-      const prompt = promptInput.value;
+      const prompt = document.getElementById("prompt1").value;
+      const fileInput = document.getElementById("image");
+      if (!fileInput.files[0]) return alert("Chọn ảnh trước!");
 
-      // Hiển thị ảnh khách upload
-      uploadedImage.src = URL.createObjectURL(file);
+      const previewImg = document.createElement("img");
+      previewImg.src = URL.createObjectURL(fileInput.files[0]);
+      document.getElementById("preview").innerHTML = "<h3>Ảnh gốc</h3>";
+      document.getElementById("preview").appendChild(previewImg);
 
       const formData = new FormData();
-      formData.append("image", file);
       formData.append("prompt", prompt);
+      formData.append("image", fileInput.files[0]);
 
-      try {
-        const res = await fetch("https://zudo-render.onrender.com/render", {
-          method: "POST",
-          body: formData
-        });
+      document.getElementById("status").innerText = "🌀 Đang render, chờ xíu...";
 
-        const result = await res.json();
-        if (result.image_url) {
-          statusText.textContent = "✅ Render thành công!";
-          resultImage.src = result.image_url;
-        } else {
-          statusText.textContent = "❌ Render thất bại!";
-        }
-      } catch (err) {
-        console.error(err);
-        statusText.textContent = "❌ Lỗi kết nối đến server!";
+      const res = await fetch("https://zudo-render.onrender.com/render", {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await res.json();
+
+      if (data.image_url) {
+        document.getElementById("result").innerHTML = `<h3>Kết quả render</h3><img src="${data.image_url}" alt="Render result">`;
+        document.getElementById("status").innerText = "✅ Render xong!";
+      } else {
+        document.getElementById("status").innerText = "❌ Lỗi render: " + (data.error || "Không rõ");
       }
+    });
+
+    document.getElementById("txt2img-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const prompt = document.getElementById("prompt2").value;
+      alert("Chức năng Text to Image đang được phát triển!");
+      // TODO: Gọi API text2img khi có endpoint thật
     });
   </script>
 </body>
