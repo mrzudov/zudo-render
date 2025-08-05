@@ -1,77 +1,64 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Zudo Render</title>
-  <style>
-    body {
-      background-color: black;
-      color: lime;
-      font-family: monospace;
-      text-align: center;
-      padding: 30px;
-    }
-    input, button {
-      padding: 10px;
-      margin: 10px;
-      font-size: 16px;
-    }
-    img {
-      max-width: 90%;
-      margin-top: 20px;
-      border: 3px solid lime;
-    }
-  </style>
 </head>
 <body>
-  <h1>Zudo Render</h1>
-  <p><b>AI Kiến Tạo Phối Cảnh Đỉnh Cao</b></p>
+  <h2>Zudo Render</h2>
+  <form id="renderForm">
+    <input type="file" id="imageInput" accept="image/*" required /><br />
+    <input type="text" id="promptInput" placeholder="Nhập prompt mô tả..." required /><br />
+    <button type="submit">Render</button>
+  </form>
 
-  <input type="file" id="imageInput"><br>
-  <input type="text" id="promptInput" placeholder="Nhập mô tả (prompt)"><br>
-  <button onclick="renderImage()">🎨 Render</button>
+  <p id="status">⏳ Chờ upload...</p>
+  <h3>Ảnh khách upload:</h3>
+  <img id="uploadedImage" style="max-width: 300px;"/>
 
-  <div id="status" style="margin-top: 20px; font-size: 18px;"></div>
-  <div id="output" style="margin-top: 20px;"></div>
+  <h3>Ảnh sau khi render:</h3>
+  <img id="resultImage" style="max-width: 300px;"/>
 
   <script>
-    async function renderImage() {
-      const imageFile = document.getElementById("imageInput").files[0];
-      const prompt = document.getElementById("promptInput").value;
-      const statusDiv = document.getElementById("status");
-      const outputDiv = document.getElementById("output");
+    const form = document.getElementById('renderForm');
+    const imageInput = document.getElementById('imageInput');
+    const promptInput = document.getElementById('promptInput');
+    const statusText = document.getElementById('status');
+    const uploadedImage = document.getElementById('uploadedImage');
+    const resultImage = document.getElementById('resultImage');
 
-      if (!imageFile || !prompt) {
-        alert("Vui lòng upload ảnh và nhập mô tả trước khi render!");
-        return;
-      }
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      statusText.textContent = "⏳ Đang gửi lên Zudo Render...";
+      const file = imageInput.files[0];
+      const prompt = promptInput.value;
+
+      // Hiển thị ảnh khách upload
+      uploadedImage.src = URL.createObjectURL(file);
 
       const formData = new FormData();
-      formData.append("image", imageFile);
+      formData.append("image", file);
       formData.append("prompt", prompt);
 
-      statusDiv.innerText = "🚀 Đang gửi ảnh đến AI...";
-      outputDiv.innerHTML = "";
-
       try {
-        const response = await fetch("https://zudo-render.onrender.com/render", {
+        const res = await fetch("https://zudo-render.onrender.com/render", {
           method: "POST",
-          body: formData,
+          body: formData
         });
 
-        const result = await response.json();
-
+        const result = await res.json();
         if (result.image_url) {
-          statusDiv.innerText = "✅ Đã render xong!";
-          outputDiv.innerHTML = `<img src="${result.image_url}" alt="Rendered Image">`;
+          statusText.textContent = "✅ Render thành công!";
+          resultImage.src = result.image_url;
         } else {
-          statusDiv.innerText = "❌ Không nhận được hình ảnh trả về.";
+          statusText.textContent = "❌ Render thất bại!";
         }
-      } catch (error) {
-        statusDiv.innerText = "❌ Có lỗi xảy ra khi kết nối tới backend!";
-        console.error(error);
+      } catch (err) {
+        console.error(err);
+        statusText.textContent = "❌ Lỗi kết nối đến server!";
       }
-    }
+    });
   </script>
 </body>
 </html>
