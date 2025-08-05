@@ -7,64 +7,48 @@ const axios = require("axios");
 const app = express();
 const upload = multer({ dest: "uploads/" });
 app.use(cors());
+app.use(express.json());
+app.use(express.static("public"));
 
-const API_KEY = "sk-hfHQQPT05bIHWaWs63Cf861622Bc4a3bAa8eD80b868dD024"; // Thay đúng key
-
-// Route kiểm tra server sống
-app.get("/", (req, res) => {
-  res.send("✅ Zudo Render backend đang chạy. Gửi POST tới /render để sử dụng.");
-});
-
-// Route render
 app.post("/render", upload.single("image"), async (req, res) => {
   const prompt = req.body.prompt;
-  const imagePath = req.file?.path;
-
-  if (!prompt || !imagePath) {
-    return res.status(400).json({ error: "Thiếu prompt hoặc ảnh" });
-  }
+  const imagePath = req.file.path;
 
   try {
-    const imgData = fs.readFileSync(imagePath, { encoding: "base64" });
+    const imgData = fs.readFileSync(imagePath).toString("base64");
 
     const response = await axios.post(
-      "https://api.laozhang.ai/sdapi/v1/img2img", // <-- Đảm bảo URL này là đúng
+      "https://api-inference.huggingface.co/models/SG161222/Realistic_Vision_V6.0_B1_noVAE",
       {
-        init_images: ["data:image/png;base64," + imgData],
-        prompt: prompt,
-        denoising_strength: 0.75
+        inputs: {
+          prompt: prompt,
+          image: `data:image/png;base64,${imgData}`,
+        },
+        options: {
+          wait_for_model: true
+        }
       },
       {
         headers: {
-          "Authorization": `Bearer ${API_KEY}`,
           "Content-Type": "application/json"
         }
       }
     );
 
-    console.log("✅ Toàn bộ phản hồi từ LaoZhang:", response.data);
-
-    const base64Image = response.data?.images?.[0];
-
-    if (!base64Image) {
-      return res.status(500).json({ error: "Không nhận được ảnh từ API LaoZhang" });
+    const output = response.data;
+    if (output && output.length > 0 && output[0].image) {
+      res.json({ image_url: output[0].image });
+    } else {
+      res.status(500).json({ error: "Không nhận được ảnh từ HuggingFace" });
     }
-
-    res.json({ image_url: "data:image/png;base64," + base64Image });
 
   } catch (err) {
-    console.error("❌ Lỗi khi gọi LaoZhang:", err.response?.data || err.message);
-    res.status(500).json({
-      error: "Lỗi khi render",
-      details: err.response?.data || err.message
-    });
+    res.status(500).json({ error: "Lỗi khi render", details: err.message });
   } finally {
-    if (imagePath && fs.existsSync(imagePath)) {
-      fs.unlinkSync(imagePath); // Xoá ảnh tạm
-    }
+    fs.unlinkSync(imagePath);
   }
 });
 
 app.listen(3000, () => {
-  console.log("🚀 Zudo Render backend chạy tại http://localhost:3000");
+  console.log("✅ Zudo Render backend đang chạy tại http://localhost:3000");
 });
