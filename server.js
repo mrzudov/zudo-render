@@ -33,7 +33,7 @@ app.post('/render', upload.single('image'), async (req, res) => {
     );
 
     const resultBase64 = apiResponse.data?.images?.[0];
-    res.json({ image_url: `data:image/png;base64,${resultBase64}` });
+    res.json({ image_url: result.data?.image });
   } catch (error) {
     res.status(500).json({ error: 'Lỗi từ API render hoặc server.' });
   }
