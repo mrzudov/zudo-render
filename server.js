@@ -3,11 +3,11 @@ const multer = require("multer");
 const cors = require("cors");
 const fs = require("fs");
 const axios = require("axios");
+const FormData = require("form-data");
 
 const app = express();
 const upload = multer({ dest: "uploads/" });
 app.use(cors());
-app.use(express.json());
 app.use(express.static("public"));
 
 app.post("/render", upload.single("image"), async (req, res) => {
@@ -15,40 +15,40 @@ app.post("/render", upload.single("image"), async (req, res) => {
   const imagePath = req.file.path;
 
   try {
-    const imgData = fs.readFileSync(imagePath).toString("base64");
+    const form = new FormData();
+    form.append("inputs", fs.createReadStream(imagePath));
+    form.append("options", JSON.stringify({ wait_for_model: true }));
+    form.append("parameters", JSON.stringify({ prompt: prompt }));
 
     const response = await axios.post(
       "https://api-inference.huggingface.co/models/SG161222/Realistic_Vision_V6.0_B1_noVAE",
-      {
-        inputs: {
-          prompt: prompt,
-          image: `data:image/png;base64,${imgData}`,
-        },
-        options: {
-          wait_for_model: true
-        }
-      },
+      form,
       {
         headers: {
-          "Content-Type": "application/json"
-        }
+          ...form.getHeaders()
+        },
+        maxBodyLength: Infinity,
+        timeout: 120000
       }
     );
 
-    const output = response.data;
-    if (output && output.length > 0 && output[0].image) {
-      res.json({ image_url: output[0].image });
+    const outputImage = response.data;
+
+    // HuggingFace sẽ trả ảnh dạng base64 PNG hoặc trực tiếp blob
+    // Giả sử nó trả file ảnh URL hoặc buffer base64
+    if (outputImage && outputImage[0] && outputImage[0].image) {
+      res.json({ image_url: outputImage[0].image });
     } else {
-      res.status(500).json({ error: "Không nhận được ảnh từ HuggingFace" });
+      res.status(500).json({ error: "Không nhận được ảnh từ HuggingFace." });
     }
 
   } catch (err) {
-    res.status(500).json({ error: "Lỗi khi render", details: err.message });
+    res.status(500).json({ error: "Lỗi render từ HuggingFace", details: err.message });
   } finally {
-    fs.unlinkSync(imagePath);
+    fs.unlinkSync(imagePath); // xoá ảnh tạm
   }
 });
 
 app.listen(3000, () => {
-  console.log("✅ Zudo Render backend đang chạy tại http://localhost:3000");
+  console.log("✅ Backend đang chạy tại http://localhost:3000");
 });
