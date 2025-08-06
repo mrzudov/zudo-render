@@ -1,49 +1,45 @@
-const express = require("express");
-const multer = require("multer");
-const cors = require("cors");
-const axios = require("axios");
-const FormData = require("form-data");
-const fs = require("fs");
+import express from 'express';
+import cors from 'cors';
+import multer from 'multer';
+import axios from 'axios';
+import FormData from 'form-data';
+import fs from 'fs';
 
 const app = express();
-const upload = multer({ dest: "uploads/" });
+const port = process.env.PORT || 3000;
+
 app.use(cors());
+app.use(express.json());
 
-app.post("/render", upload.single("image"), async (req, res) => {
-try {
-const imagePath = req.file.path;
-const prompt = req.body.prompt;
+const upload = multer({ dest: 'uploads/' });
 
-const form = new FormData();
-form.append("image", fs.createReadStream(imagePath));
-form.append("prompt", prompt);
+app.post('/render', upload.single('image'), async (req, res) => {
+  try {
+    const imagePath = req.file.path;
+    const prompt = req.body.prompt || 'default prompt';
 
-const response = await axios.post(
-"https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2-1",
-form,
-{
-headers: {
-...form.getHeaders(),
-},
-responseType: "arraybuffer",
-}
-);
+    const form = new FormData();
+    form.append('image', fs.createReadStream(imagePath));
+    form.append('prompt', prompt);
 
-fs.unlinkSync(imagePath); // xóa ảnh sau khi dùng
+    const response = await axios.post(
+      'https://api-inference.huggingface.co/models/your-model-name',
+      form,
+      {
+        headers: {
+          ...form.getHeaders(),
+        },
+      }
+    );
 
-res.set("Content-Type", "image/png");
-res.send(response.data);
-} catch (err) {
-console.error(err.message);
-res.status(500).send("Lỗi khi render ảnh.");
-}
+    fs.unlinkSync(imagePath); // Xoá ảnh tạm sau khi xong
+    res.send(response.data);
+  } catch (err) {
+    console.error('❌ Render error:', err);
+    res.status(500).json({ error: 'Failed to render image' });
+  }
 });
 
-app.get("/", (req, res) => {
-res.send("Zudo Render Backend hoạt động!");
-});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-console.log(`Zudo Render backend chạy tại cổng ${PORT}`);
+app.listen(port, () => {
+  console.log(`✅ Zudo Render backend đang chạy tại http://localhost:${port}`);
 });
