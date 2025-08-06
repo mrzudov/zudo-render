@@ -1,12 +1,13 @@
+
 {
-  "name": "zudo-render-huggingface",
+  "name": "zudo-render-hf",
   "version": "1.0.0",
   "main": "server.js",
   "dependencies": {
     "axios": "^1.6.0",
     "cors": "^2.8.5",
     "express": "^4.18.2",
-    "multer": "^1.4.4",
-     "form-data": "^4.0.0"
+    "form-data": "^4.0.0",
+    "multer": "^1.4.5"
   }
 }
