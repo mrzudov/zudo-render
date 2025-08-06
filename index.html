@@ -20,46 +20,44 @@
       <img id="resultImage" style="max-width:300px;border:1px solid #0f0;">
     </div>
   </div>
-
+  
 <script>
+document.getElementById("imageForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
   const imageInput = document.getElementById("imageInput");
-  const promptInput = document.getElementById("promptInput");
-  const renderButton = document.getElementById("renderButton");
-  const statusText = document.getElementById("status");
-  const originalImage = document.getElementById("originalImage");
-  const resultImage = document.getElementById("resultImage");
+  const prompt = document.getElementById("prompt").value;
 
-  renderButton.onclick = async () => {
-    const file = imageInput.files[0];
-    const prompt = promptInput.value;
+  if (!imageInput.files[0]) {
+    alert("Vui lòng chọn ảnh.");
+    return;
+  }
 
-    if (!file) return alert("Vui lòng chọn ảnh!");
+  const formData = new FormData();
+  formData.append("image", imageInput.files[0]);
+  formData.append("prompt", prompt);
 
-    const formData = new FormData();
-    formData.append("image", file);
-    formData.append("prompt", prompt);
+  try {
+    const response = await fetch("https://zudo-render.onrender.com/render", {
+      method: "POST",
+      body: formData // ĐỪNG set headers thủ công
+    });
 
-    renderButton.disabled = true;
-    statusText.textContent = "⏳ Đang gửi ảnh đến AI...";
+    const result = await response.json();
 
-    originalImage.src = URL.createObjectURL(file);
-
-    try {
-      const res = await fetch("/render", { method: "POST", body: formData });
-      const data = await res.json();
-
-      if (res.ok) {
-        resultImage.src = data.image_url;
-        statusText.textContent = "✅ Render hoàn tất!";
-      } else {
-        statusText.textContent = "❌ " + (data.error || "Render thất bại!");
-      }
-    } catch (err) {
-      statusText.textContent = "❌ Lỗi mạng: " + err.message;
-    } finally {
-      renderButton.disabled = false;
+    if (result.result) {
+      document.getElementById("output").innerHTML = `
+        <h3>Ảnh đã render:</h3>
+        <img src="data:image/png;base64,${result.result}" style="max-width: 100%;" />
+      `;
+    } else {
+      alert("Render thất bại.");
     }
-  };
+  } catch (error) {
+    console.error(error);
+    alert("Lỗi khi kết nối tới server.");
+  }
+});
 </script>
 </body>
 </html>
