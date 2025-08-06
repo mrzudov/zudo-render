@@ -1,45 +1,43 @@
 const express = require("express");
 const multer = require("multer");
 const cors = require("cors");
-const fs = require("fs");
 const axios = require("axios");
 
 const app = express();
-const upload = multer({ dest: "uploads/" });
 app.use(cors());
-app.use(express.static("public"));
+const upload = multer();
+
+app.use(express.static(".")); // phục vụ index.html
 
 app.post("/render", upload.single("image"), async (req, res) => {
-  const prompt = req.body.prompt;
-  const imagePath = req.file.path;
+  const prompt = req.body.prompt || "photorealistic, ultra detailed architecture";
+  const imageBuffer = req.file?.buffer;
+
+  if (!imageBuffer) {
+    return res.status(400).json({ error: "Không nhận được ảnh." });
+  }
 
   try {
-    const imageData = fs.readFileSync(imagePath);
     const response = await axios.post(
-      "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2",
-      imageData,
+      "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2-1",
       {
-        headers: {
-          "Content-Type": "image/png",
-          "Accept": "application/json"
-        },
-        params: {
-          inputs: prompt
-        }
+        inputs: prompt,
+        image: imageBuffer.toString("base64")
+      },
+      {
+        headers: { "Content-Type": "application/json" }
       }
     );
 
     const result = response.data;
-    console.log("Kết quả từ HuggingFace:", result);
-    res.json({ result });
+    const image = result?.image_base64;
+    if (!image) throw new Error("Không có ảnh trả về.");
+
+    res.json({ image_url: "data:image/png;base64," + image });
   } catch (err) {
-    console.error("Lỗi render:", err.message);
-    res.status(500).json({ error: "Render thất bại", details: err.message });
-  } finally {
-    fs.unlinkSync(imagePath);
+    res.status(500).json({ error: "Lỗi khi render", details: err.message });
   }
 });
 
-app.listen(3000, () => {
-  console.log("Zudo Render backend chạy tại http://localhost:3000");
-});
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log("✅ Zudo Render đang chạy tại http://localhost:" + PORT));
