@@ -1,93 +1,65 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Zudo Render</title>
-  <style>
-    body {
-      background: black;
-      color: white;
-      font-family: sans-serif;
-      padding: 20px;
-    }
-    h1 {
-      color: lime;
-    }
-    .box {
-      background: #222;
-      padding: 20px;
-      border-radius: 10px;
-    }
-    input[type="file"], textarea {
-      display: block;
-      margin-top: 10px;
-      width: 100%;
-    }
-    button {
-      margin-top: 10px;
-      background: red;
-      color: white;
-      padding: 10px;
-      border: none;
-      cursor: pointer;
-    }
-    #result, #preview {
-      margin-top: 20px;
-    }
-  </style>
 </head>
-<body>
-  <h1>Zudo Render</h1>
-  <div class="box">
-    <label>Chọn hình (image-to-image):</label>
-    <input type="file" id="imageInput" accept="image/*" />
-    <textarea id="prompt" rows="5" placeholder="Nhập prompt mô tả..."></textarea>
-    <button onclick="renderImage()">Render</button>
-    <div id="preview"></div>
-    <div id="result"></div>
+<body style="background:#000;color:#0f0;text-align:center;font-family:sans-serif;">
+  <h1>Zudo Render 🧠</h1>
+  <input type="file" id="imageInput"><br><br>
+  <input type="text" id="promptInput" placeholder="Nhập prompt mô tả" size="50"><br><br>
+  <button id="renderButton">🚀 Render</button>
+  <p id="status"></p>
+  <div style="display:flex;justify-content:center;gap:20px;margin-top:20px;">
+    <div>
+      <h4>Ảnh gốc</h4>
+      <img id="originalImage" style="max-width:300px;border:1px solid #0f0;">
+    </div>
+    <div>
+      <h4>Kết quả</h4>
+      <img id="resultImage" style="max-width:300px;border:1px solid #0f0;">
+    </div>
   </div>
 
-  <script>
-    async function renderImage() {
-      const prompt = document.getElementById("prompt").value;
-      const imageInput = document.getElementById("imageInput").files[0];
-      const resultDiv = document.getElementById("result");
-      const previewDiv = document.getElementById("preview");
-      resultDiv.innerHTML = "Đang render... ⏳";
-      previewDiv.innerHTML = "";
+<script>
+  const imageInput = document.getElementById("imageInput");
+  const promptInput = document.getElementById("promptInput");
+  const renderButton = document.getElementById("renderButton");
+  const statusText = document.getElementById("status");
+  const originalImage = document.getElementById("originalImage");
+  const resultImage = document.getElementById("resultImage");
 
-      const formData = new FormData();
-      formData.append("image", imageInput);
-      formData.append("prompt", prompt);
+  renderButton.onclick = async () => {
+    const file = imageInput.files[0];
+    const prompt = promptInput.value;
 
-      const imgPreview = document.createElement("img");
-      imgPreview.src = URL.createObjectURL(imageInput);
-      imgPreview.style.maxWidth = "300px";
-      previewDiv.appendChild(imgPreview);
+    if (!file) return alert("Vui lòng chọn ảnh!");
 
-      try {
-        const response = await fetch("/render", {
-          method: "POST",
-          body: formData
-        });
+    const formData = new FormData();
+    formData.append("image", file);
+    formData.append("prompt", prompt);
 
-        const data = await response.json();
-        console.log(data);
+    renderButton.disabled = true;
+    statusText.textContent = "⏳ Đang gửi ảnh đến AI...";
 
-        if (data.result && data.result.length > 0) {
-          const img = document.createElement("img");
-          img.src = "data:image/png;base64," + data.result[0];
-          img.style.maxWidth = "100%";
-          resultDiv.innerHTML = "";
-          resultDiv.appendChild(img);
-        } else {
-          resultDiv.innerHTML = "Render thất bại ❌";
-        }
-      } catch (err) {
-        console.error(err);
-        resultDiv.innerHTML = "Lỗi kết nối: " + err.message;
+    originalImage.src = URL.createObjectURL(file);
+
+    try {
+      const res = await fetch("/render", { method: "POST", body: formData });
+      const data = await res.json();
+
+      if (res.ok) {
+        resultImage.src = data.image_url;
+        statusText.textContent = "✅ Render hoàn tất!";
+      } else {
+        statusText.textContent = "❌ " + (data.error || "Render thất bại!");
       }
+    } catch (err) {
+      statusText.textContent = "❌ Lỗi mạng: " + err.message;
+    } finally {
+      renderButton.disabled = false;
     }
-  </script>
+  };
+</script>
 </body>
 </html>
