@@ -1,63 +1,95 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>Zudo Render</title>
-</head>
-<body style="background:#000;color:#0f0;text-align:center;font-family:sans-serif;">
-  <h1>Zudo Render 🧠</h1>
-  <input type="file" id="imageInput"><br><br>
-  <input type="text" id="promptInput" placeholder="Nhập prompt mô tả" size="50"><br><br>
-  <button id="renderButton">🚀 Render</button>
-  <p id="status"></p>
-  <div style="display:flex;justify-content:center;gap:20px;margin-top:20px;">
-    <div>
-      <h4>Ảnh gốc</h4>
-      <img id="originalImage" style="max-width:300px;border:1px solid #0f0;">
-    </div>
-    <div>
-      <h4>Kết quả</h4>
-      <img id="resultImage" style="max-width:300px;border:1px solid #0f0;">
-    </div>
-  </div>
-  
-<script>
-document.getElementById("imageForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-
-  const imageInput = document.getElementById("imageInput");
-  const prompt = document.getElementById("prompt").value;
-
-  if (!imageInput.files[0]) {
-    alert("Vui lòng chọn ảnh.");
-    return;
-  }
-
-  const formData = new FormData();
-  formData.append("image", imageInput.files[0]);
-  formData.append("prompt", prompt);
-
-  try {
-    const response = await fetch("https://zudo-render.onrender.com/render", {
-      method: "POST",
-      body: formData // ĐỪNG set headers thủ công
-    });
-
-    const result = await response.json();
-
-    if (result.result) {
-      document.getElementById("output").innerHTML = `
-        <h3>Ảnh đã render:</h3>
-        <img src="data:image/png;base64,${result.result}" style="max-width: 100%;" />
-      `;
-    } else {
-      alert("Render thất bại.");
+  <meta charset="UTF-8" />
+  <title>Zudo Render 🧠</title>
+  <style>
+    body {
+      background-color: black;
+      color: limegreen;
+      text-align: center;
+      font-family: Arial;
     }
-  } catch (error) {
-    console.error(error);
-    alert("Lỗi khi kết nối tới server.");
-  }
-});
-</script>
+    input, button {
+      padding: 8px;
+      margin: 10px;
+      font-size: 16px;
+    }
+    #result-img {
+      max-width: 90%;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Zudo Render 🧠</h1>
+  <input type="file" id="image-input" accept="image/*" />
+  <br />
+  <input type="text" id="prompt" size="60" placeholder="Nhập prompt render..." />
+  <br />
+  <button onclick="renderImage()">🎨 Render</button>
+  <div id="status"></div>
+  <div>
+    <h3>Ảnh gốc</h3>
+    <img id="original-img" />
+    <h3>Kết quả</h3>
+    <img id="result-img" />
+  </div>
+
+  <script>
+    async function renderImage() {
+      const fileInput = document.getElementById('image-input');
+      const prompt = document.getElementById('prompt').value;
+      const status = document.getElementById('status');
+      const originalImg = document.getElementById('original-img');
+      const resultImg = document.getElementById('result-img');
+
+      if (!fileInput.files[0]) {
+        alert("Vui lòng chọn ảnh");
+        return;
+      }
+
+      const file = fileInput.files[0];
+      const reader = new FileReader();
+
+      reader.onloadend = async () => {
+        const base64Image = reader.result;
+
+        originalImg.src = base64Image;
+        status.innerText = "⏳ Đang render ảnh, đợi tí...";
+
+        try {
+          const response = await fetch('https://api-inference.huggingface.co/models/lllyasviel/sd-controlnet-img2img', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+              // KHÔNG cần API key nếu dùng public model
+            },
+            body: JSON.stringify({
+              inputs: base64Image,
+              parameters: {
+                prompt: prompt
+              }
+            })
+          });
+
+          if (!response.ok) {
+            status.innerText = "❌ Lỗi render: " + response.statusText;
+            return;
+          }
+
+          const blob = await response.blob();
+          const resultURL = URL.createObjectURL(blob);
+          resultImg.src = resultURL;
+          status.innerText = "✅ Render xong!";
+        } catch (err) {
+          console.error(err);
+          status.innerText = "❌ Lỗi mạng hoặc API!";
+        }
+      };
+
+      reader.readAsDataURL(file);
+    }
+  </script>
 </body>
 </html>
