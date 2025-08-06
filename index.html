@@ -1,75 +1,91 @@
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
   <title>Zudo Render</title>
   <style>
-    body { background: #000; color: #0f0; font-family: monospace; text-align: center; padding: 20px; }
-    h1 { color: red; }
-    textarea, input, select { width: 80%; padding: 10px; margin: 10px auto; font-size: 16px; background: #111; color: #0f0; border: 1px solid #0f0; }
-    button { padding: 10px 20px; font-size: 16px; background: red; color: white; border: none; cursor: pointer; }
-    img { max-width: 45%; margin: 10px; }
-    .flex { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
-    #status { margin-top: 10px; font-size: 14px; color: #ff0; }
+    body {
+      background: black;
+      color: white;
+      font-family: sans-serif;
+      padding: 20px;
+    }
+    h1 {
+      color: lime;
+    }
+    .box {
+      background: #222;
+      padding: 20px;
+      border-radius: 10px;
+    }
+    input[type="file"], textarea {
+      display: block;
+      margin-top: 10px;
+      width: 100%;
+    }
+    button {
+      margin-top: 10px;
+      background: red;
+      color: white;
+      padding: 10px;
+      border: none;
+      cursor: pointer;
+    }
+    #result, #preview {
+      margin-top: 20px;
+    }
   </style>
 </head>
 <body>
-  <h1>🔥 ZUDO RENDER 🔥</h1>
-
-  <select id="mode">
-    <option value="text2img">🖼️ Text to Image</option>
-    <option value="img2img">🖌️ Image to Image</option>
-  </select>
-
-  <br/>
-  <textarea id="prompt" rows="6" placeholder="Nhập prompt cực ngầu vào đây nhé..."></textarea>
-  <br/>
-  <input type="file" id="imageInput" accept="image/*" />
-  <br/>
-  <button onclick="renderImage()">🚀 Render</button>
-
-  <p id="status"></p>
-  <div class="flex" id="result"></div>
+  <h1>Zudo Render</h1>
+  <div class="box">
+    <label>Chọn hình (image-to-image):</label>
+    <input type="file" id="imageInput" accept="image/*" />
+    <textarea id="prompt" rows="5" placeholder="Nhập prompt mô tả..."></textarea>
+    <button onclick="renderImage()">Render</button>
+    <div id="preview"></div>
+    <div id="result"></div>
+  </div>
 
   <script>
     async function renderImage() {
-      const mode = document.getElementById("mode").value;
-      const prompt = document.getElementById("prompt").value.trim();
-      const imageInput = document.getElementById("imageInput");
-      const status = document.getElementById("status");
-      const result = document.getElementById("result");
-
-      if (!prompt) return alert("Nhập prompt đi ông nội!");
-      if (mode === "img2img" && !imageInput.files[0]) return alert("Chọn ảnh gốc để Image-to-Image!");
+      const prompt = document.getElementById("prompt").value;
+      const imageInput = document.getElementById("imageInput").files[0];
+      const resultDiv = document.getElementById("result");
+      const previewDiv = document.getElementById("preview");
+      resultDiv.innerHTML = "Đang render... ⏳";
+      previewDiv.innerHTML = "";
 
       const formData = new FormData();
+      formData.append("image", imageInput);
       formData.append("prompt", prompt);
-      if (mode === "img2img") formData.append("image", imageInput.files[0]);
 
-      status.textContent = "⏳ Đang render...";
-      result.innerHTML = "";
-
-      const endpoint = mode === "text2img" ? "/text2img" : "/render";
+      const imgPreview = document.createElement("img");
+      imgPreview.src = URL.createObjectURL(imageInput);
+      imgPreview.style.maxWidth = "300px";
+      previewDiv.appendChild(imgPreview);
 
       try {
-        const res = await fetch(endpoint, {
+        const response = await fetch("/render", {
           method: "POST",
           body: formData
         });
-        const data = await res.json();
 
-        if (data.image_url) {
-          status.textContent = "✅ Render thành công!";
-          result.innerHTML = `
-            ${mode === "img2img" ? `<img src="${URL.createObjectURL(imageInput.files[0])}" alt="Ảnh gốc" />` : ""}
-            <img src="${data.image_url}" alt="Ảnh render" />
-          `;
+        const data = await response.json();
+        console.log(data);
+
+        if (data.result && data.result.length > 0) {
+          const img = document.createElement("img");
+          img.src = "data:image/png;base64," + data.result[0];
+          img.style.maxWidth = "100%";
+          resultDiv.innerHTML = "";
+          resultDiv.appendChild(img);
         } else {
-          status.textContent = "❌ Lỗi render: " + (data.error || "Không rõ lỗi");
+          resultDiv.innerHTML = "Render thất bại ❌";
         }
       } catch (err) {
-        status.textContent = "❌ Lỗi kết nối: " + err.message;
+        console.error(err);
+        resultDiv.innerHTML = "Lỗi kết nối: " + err.message;
       }
     }
   </script>
