@@ -1,40 +1,39 @@
-const form = document.getElementById('render-form');
-const imageInput = document.getElementById('image');
-const promptInput = document.getElementById('prompt');
-const originalImg = document.getElementById('original-img');
-const resultImg = document.getElementById('result-img');
-const progress = document.getElementById('progress');
+const express = require('express');
+const multer = require('multer');
+const cors = require('cors');
+const axios = require('axios');
+const FormData = require('form-data');
+const fs = require('fs');
 
-form.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const file = imageInput.files[0];
-  const prompt = promptInput.value;
-  if (!file || !prompt) return;
+const app = express();
+const upload = multer({ dest: 'uploads/' });
+app.use(cors());
 
-  originalImg.src = URL.createObjectURL(file);
-  resultImg.src = '';
-  progress.textContent = 'Đang xử lý (0%)...';
+app.post('/render', upload.single('image'), async (req, res) => {
+  const prompt = req.body.prompt;
+  const filePath = req.file.path;
 
-  const formData = new FormData();
-  formData.append('image', file);
-  formData.append('prompt', prompt);
-
-  const start = Date.now();
+  const form = new FormData();
+  form.append('image', fs.createReadStream(filePath));
+  form.append('prompt', prompt);
+  form.append('num_inference_steps', '25');
+  form.append('guidance_scale', '7.5');
 
   try {
-    const response = await fetch('https://zudo-render-backend.onrender.com/render', {
-      method: 'POST',
-      body: formData
-    });
+    const response = await axios.post(
+      'https://api-inference.huggingface.co/models/lllyasviel/control_v11p_sd15_canny',
+      form,
+      { headers: { ...form.getHeaders() }, responseType: 'arraybuffer' }
+    );
 
-    const blob = await response.blob();
-    const url = URL.createObjectURL(blob);
-    resultImg.src = url;
-
-    const duration = ((Date.now() - start) / 1000).toFixed(1);
-    progress.textContent = `Hoàn tất sau ${duration} giây`;
+    res.set('Content-Type', 'image/png');
+    res.send(response.data);
   } catch (err) {
-    progress.textContent = 'Lỗi render. Vui lòng thử lại.';
-    console.error(err);
+    res.status(500).send('Render lỗi');
+  } finally {
+    fs.unlinkSync(filePath);
   }
 });
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Zudo backend chạy tại http://localhost:${PORT}`));
