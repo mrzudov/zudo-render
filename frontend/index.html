@@ -1,73 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Zudo Render</title>
-<style>
-body {
-background-color: black;
-color: limegreen;
-font-family: monospace;
-padding: 20px;
-}
-textarea, input {
-width: 100%;
-margin-bottom: 10px;
-font-size: 16px;
-}
-img {
-max-width: 100%;
-margin-top: 20px;
-}
-button {
-padding: 10px;
-background-color: red;
-color: white;
-border: none;
-font-weight: bold;
-cursor: pointer;
-}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Zudo Render</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-<h1>Zudo Render – AI Phối Cảnh</h1>
-<p>Chọn ảnh sơ phát và nhập prompt:</p>
-<input type="file" id="imageInput" />
-<textarea id="promptInput" rows="4" placeholder="Nhập prompt..."></textarea>
-<button onclick="renderImage()">Render</button>
-<div id="result"></div>
+  <h1>Zudo Render</h1>
 
-<script>
-async function renderImage() {
-const imageFile = document.getElementById("imageInput").files[0];
-const prompt = document.getElementById("promptInput").value;
+  <form id="render-form">
+    <input type="file" id="image-input" accept="image/*" required />
+    <textarea id="prompt-input" placeholder="Nhập prompt render..." required></textarea>
+    <button type="submit">Render</button>
+  </form>
 
-if (!imageFile || !prompt) {
-alert("Nhập đầy đủ prompt và ảnh");
-return;
-}
+  <div id="status" style="display:none; margin-top:10px;">Đang xử lý... Vui lòng chờ khoảng 30–40 giây.</div>
 
-const formData = new FormData();
-formData.append("image", imageFile);
-formData.append("prompt", prompt);
+  <div style="display:flex; gap:20px; margin-top:20px;">
+    <div>
+      <h3>Hình gốc</h3>
+      <img id="original-image" src="" alt="Hình gốc" style="max-width:300px;" />
+    </div>
+    <div>
+      <h3>Hình sau render</h3>
+      <img id="rendered-image" src="" alt="Hình sau render" style="max-width:300px;" />
+    </div>
+  </div>
 
-document.getElementById("result").innerHTML = "⏳ Đang render...";
-
-const response = await fetch("https://zudo-render.onrender.com/render", {
-method: "POST",
-body: formData,
-});
-
-if (response.ok) {
-const blob = await response.blob();
-const url = URL.createObjectURL(blob);
-document.getElementById("result").innerHTML = `<img src="${url}" />`;
-} else {
-document.getElementById("result").innerHTML = "❌ Lỗi khi render.";
-}
-}
-</script>
-<script src="script.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
