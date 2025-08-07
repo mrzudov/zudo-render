@@ -16,7 +16,7 @@ formData.append('image', imageFile);
 document.getElementById('result').innerHTML = 'Đang render...';
 
 try {
-const response = await fetch('https://zudo-render.onrender.com/render', {
+const response = await fetch('https://zudo-render-backend.onrender.com', {
 method: 'POST',
 body: formData
 });
