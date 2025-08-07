@@ -1,67 +1,45 @@
 import express from 'express';
-import cors from 'cors';
 import multer from 'multer';
+import cors from 'cors';
 import axios from 'axios';
+import FormData from 'form-data';
 import fs from 'fs';
 
 const app = express();
-const port = process.env.PORT || 3000;
-
-app.use(cors());
-
 const upload = multer({ dest: 'uploads/' });
+app.use(cors());
 
 app.post('/render', upload.single('image'), async (req, res) => {
   try {
-    const imagePath = req.file.path;
-    const prompt = req.body.prompt || 'default prompt';
+    const prompt = req.body.prompt || '';
+    const filePath = req.file.path;
 
-    // Chuẩn bị form gửi lên HuggingFace Spaces
-    const form = new FormData();
-    form.append('image', fs.createReadStream(imagePath));
-    form.append('prompt', prompt);
+    const formData = new FormData();
+    formData.append('image', fs.createReadStream(filePath));
+    formData.append('prompt', prompt);
 
-    // Gửi lên Spaces (không cần token)
     const response = await axios.post(
-      'https://replicate-vision-image-to-image.hf.space/api/predict',
-      {
-        data: [
-          prompt, // prompt
-          null,   // mask
-          {
-            name: req.file.originalname,
-            type: 'image/jpeg',
-            data: fs.readFileSync(imagePath).toString('base64'),
-          },
-        ]
-      },
+      'https://api-inference.huggingface.co/models/SimianLuo/LCM_Dreamshaper_v7',
+      formData,
       {
         headers: {
-          'Content-Type': 'application/json'
-        }
+          ...formData.getHeaders()
+        },
+        responseType: 'arraybuffer'
       }
     );
 
-    fs.unlinkSync(imagePath); // Xoá file ảnh local sau render
+    const imageBase64 = Buffer.from(response.data, 'binary').toString('base64');
+    const imageUrl = `data:image/png;base64,${imageBase64}`;
 
-    // Lấy ảnh trả về từ API
-    const imageUrl = response.data?.data?.[0];
-
-    if (!imageUrl) {
-      throw new Error('Không có ảnh trả về từ HuggingFace');
-    }
-
+    fs.unlinkSync(filePath);
     res.json({ image_url: imageUrl });
-  } catch (err) {
-    console.error('❌ Render error:', err.message);
-    res.status(500).json({ error: 'Failed to render image' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Render thất bại.' });
   }
 });
 
-app.get('/', (req, res) => {
-  res.send('✅ Zudo Render Backend đang chạy ngon lành!');
-});
-
-app.listen(port, () => {
-  console.log(`✅ Backend chạy tại http://localhost:${port}`);
+app.listen(3000, () => {
+  console.log('Server chạy ở cổng 3000');
 });
