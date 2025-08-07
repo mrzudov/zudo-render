@@ -4,34 +4,31 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Zudo Render</title>
-  <style>
-    body { font-family: Arial; background: #111; color: #fff; text-align: center; padding: 20px; }
-    h1 { color: #00ff88; }
-    input, textarea, button { margin: 10px; padding: 10px; width: 80%; max-width: 500px; }
-    .images { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-top: 20px; }
-    .images div { flex: 1; }
-    img { max-width: 100%; border: 1px solid #333; }
-    #progress { margin-top: 10px; }
-  </style>
 </head>
 <body>
   <h1>Zudo Render</h1>
+
   <form id="render-form">
-    <input type="file" id="image" accept="image/*" required><br>
-    <textarea id="prompt" rows="4" placeholder="Nhập mô tả để AI render..." required></textarea><br>
+    <label for="image">Chọn hình cần render:</label>
+    <input type="file" id="image" name="image" required><br><br>
+
+    <label for="prompt">Mô tả render:</label>
+    <textarea id="prompt" name="prompt" rows="4" cols="50" required></textarea><br><br>
+
     <button type="submit">Render</button>
   </form>
-  <div id="progress">Đang chờ...</div>
-  <div class="images">
-    <div>
-      <h3>Hình gốc</h3>
-      <img id="original-img" src="" alt=""/>
-    </div>
-    <div>
-      <h3>Hình sau render</h3>
-      <img id="result-img" src="" alt=""/>
-    </div>
+
+  <h3>Hình gốc:</h3>
+  <img id="original-image" src="" width="300"/>
+
+  <h3>Tiến trình render: <span id="progress-text">Đang chờ...</span></h3>
+  <div id="progress-container" style="width: 300px; background: #ddd;">
+    <div id="progress-bar" style="height: 20px; width: 0%; background: green;"></div>
   </div>
+
+  <h3>Hình sau render:</h3>
+  <img id="result-image" src="" width="300"/>
+
   <script src="script.js"></script>
 </body>
 </html>
