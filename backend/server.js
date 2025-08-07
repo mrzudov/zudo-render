@@ -39,7 +39,9 @@ app.post('/render', upload.single('image'), async (req, res) => {
     res.status(500).json({ error: 'Failed to render image' });
   }
 });
-
+app.get('/', (req, res) => {
+  res.send('Zudo Render Backend đang chạy ngon lành!');
+});
 app.listen(port, () => {
   console.log(`✅ Zudo Render backend đang chạy tại http://localhost:${port}`);
 });
