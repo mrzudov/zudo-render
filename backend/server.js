@@ -1,39 +1,45 @@
-const express = require('express');
-const multer = require('multer');
-const cors = require('cors');
-const axios = require('axios');
-const FormData = require('form-data');
-const fs = require('fs');
+import express from 'express';
+import cors from 'cors';
+import multer from 'multer';
+import axios from 'axios';
+import FormData from 'form-data';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 const app = express();
-const upload = multer({ dest: 'uploads/' });
+const upload = multer();
 app.use(cors());
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+app.use(express.static(path.join(__dirname, '../frontend')));
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/index.html'));
+});
+
 app.post('/render', upload.single('image'), async (req, res) => {
-  const prompt = req.body.prompt;
-  const filePath = req.file.path;
-
-  const form = new FormData();
-  form.append('image', fs.createReadStream(filePath));
-  form.append('prompt', prompt);
-  form.append('num_inference_steps', '25');
-  form.append('guidance_scale', '7.5');
-
   try {
-    const response = await axios.post(
-      'https://api-inference.huggingface.co/models/lllyasviel/control_v11p_sd15_canny',
-      form,
-      { headers: { ...form.getHeaders() }, responseType: 'arraybuffer' }
+    const imageBuffer = req.file.buffer;
+    const prompt = req.body.prompt;
+
+    const formData = new FormData();
+    formData.append('image', imageBuffer, { filename: 'input.png' });
+    formData.append('prompt', prompt);
+
+    const apiResponse = await axios.post(
+      'https://api-inference.huggingface.co/models/Sanster/Realistic_Vision_V5.1',
+      formData,
+      { headers: formData.getHeaders(), responseType: 'arraybuffer' }
     );
 
     res.set('Content-Type', 'image/png');
-    res.send(response.data);
-  } catch (err) {
-    res.status(500).send('Render lỗi');
-  } finally {
-    fs.unlinkSync(filePath);
+    res.send(apiResponse.data);
+  } catch (error) {
+    res.status(500).json({ error: 'Render thất bại.' });
   }
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Zudo backend chạy tại http://localhost:${PORT}`));
+app.listen(PORT, () => {
+  console.log(`Zudo Render Backend running at http://localhost:${PORT}`);
+});
