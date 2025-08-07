@@ -1,45 +1,40 @@
-document.getElementById('render-form').addEventListener('submit', async (e) => {
+const form = document.getElementById('render-form');
+const imageInput = document.getElementById('image');
+const promptInput = document.getElementById('prompt');
+const originalImg = document.getElementById('original-img');
+const resultImg = document.getElementById('result-img');
+const progress = document.getElementById('progress');
+
+form.addEventListener('submit', async (e) => {
   e.preventDefault();
-
-  const imageInput = document.getElementById('image-input');
-  const promptInput = document.getElementById('prompt-input');
-  const originalImage = document.getElementById('original-image');
-  const renderedImage = document.getElementById('rendered-image');
-  const status = document.getElementById('status');
-
   const file = imageInput.files[0];
-  if (!file) return;
+  const prompt = promptInput.value;
+  if (!file || !prompt) return;
 
-  // Hiện hình gốc
-  const reader = new FileReader();
-  reader.onload = () => {
-    originalImage.src = reader.result;
-  };
-  reader.readAsDataURL(file);
-
-  // Hiện thông báo đang xử lý
-  status.style.display = 'block';
-  renderedImage.src = '';
+  originalImg.src = URL.createObjectURL(file);
+  resultImg.src = '';
+  progress.textContent = 'Đang xử lý (0%)...';
 
   const formData = new FormData();
   formData.append('image', file);
-  formData.append('prompt', promptInput.value);
+  formData.append('prompt', prompt);
+
+  const start = Date.now();
 
   try {
-    const res = await fetch('https://zudo-render-backend.onrender.com/render', {
+    const response = await fetch('https://zudo-render-backend.onrender.com/render', {
       method: 'POST',
       body: formData
     });
 
-    const data = await res.json();
-    if (data && data.image_url) {
-      renderedImage.src = data.image_url;
-    } else {
-      alert('Render thất bại!');
-    }
-  } catch (err) {
-    alert('Lỗi kết nối đến backend.');
-  }
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    resultImg.src = url;
 
-  status.style.display = 'none';
+    const duration = ((Date.now() - start) / 1000).toFixed(1);
+    progress.textContent = `Hoàn tất sau ${duration} giây`;
+  } catch (err) {
+    progress.textContent = 'Lỗi render. Vui lòng thử lại.';
+    console.error(err);
+  }
 });
