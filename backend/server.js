@@ -32,8 +32,10 @@ app.post('/render', upload.single('image'), async (req, res) => {
       { headers: formData.getHeaders(), responseType: 'arraybuffer' }
     );
 
-    res.setHeader('Content-Type', 'image/png');  // hoặc 'image/jpeg' nếu ảnh là JPG
-    res.send(apiResponse.data);
+    // ✅ Sửa duy nhất ở đây: Trả về ảnh base64 để frontend xử lý
+    const imageBase64 = Buffer.from(apiResponse.data).toString('base64');
+    res.json({ image: `data:image/png;base64,${imageBase64}` });
+
   } catch (error) {
     res.status(500).json({ error: 'Render thất bại.' });
   }
