@@ -32,7 +32,7 @@ app.post('/render', upload.single('image'), async (req, res) => {
       { headers: formData.getHeaders(), responseType: 'arraybuffer' }
     );
 
-    res.set('Content-Type', 'image/png');
+    res.setHeader('Content-Type', 'image/png');  // hoặc 'image/jpeg' nếu ảnh là JPG
     res.send(apiResponse.data);
   } catch (error) {
     res.status(500).json({ error: 'Render thất bại.' });
