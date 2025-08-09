@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Zudo Render</title>
+<style>
+body {
+background-color: black;
+color: limegreen;
+font-family: monospace;
+padding: 20px;
+}
+textarea, input {
+width: 100%;
+margin-bottom: 10px;
+font-size: 16px;
+}
+img {
+max-width: 100%;
+margin-top: 20px;
+}
+button {
+padding: 10px;
+background-color: red;
+color: white;
+border: none;
+font-weight: bold;
+cursor: pointer;
+}
+</style>
+</head>
+<body>
+<h1>Zudo Render – AI Phối Cảnh</h1>
+<p>Chọn ảnh sơ phát và nhập prompt:</p>
+<input type="file" id="imageInput" />
+<textarea id="promptInput" rows="4" placeholder="Nhập prompt..."></textarea>
+<button onclick="renderImage()">Render</button>
+<div id="result"></div>
+
+<script>
+async function renderImage() {
+const imageFile = document.getElementById("imageInput").files[0];
+const prompt = document.getElementById("promptInput").value;
+
+if (!imageFile || !prompt) {
+alert("Nhập đầy đủ prompt và ảnh");
+return;
+}
+
+const formData = new FormData();
+formData.append("image", imageFile);
+formData.append("prompt", prompt);
+
+document.getElementById("result").innerHTML = "⏳ Đang render...";
+
+const response = await fetch("https://zudo-render.onrender.com/render", {
+method: "POST",
+body: formData,
+});
+
+if (response.ok) {
+const blob = await response.blob();
+const url = URL.createObjectURL(blob);
+document.getElementById("result").innerHTML = `<img src="${url}" />`;
+} else {
+document.getElementById("result").innerHTML = "❌ Lỗi khi render.";
+}
+}
+</script>
+<script src="script.js"></script>
+</body>
+</html>
