@@ -1,0 +1,12 @@
+body {
+    background-color: rgba(76, 175, 80, 0.1); /* Xanh lá nhạt, mờ */
+}
+
+#originalImage, #renderedImage {
+    max-height: 400px;
+    object-fit: contain;
+}
+
+.hidden {
+    display: none;
+}
