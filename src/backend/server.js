@@ -1,49 +1,42 @@
-const express = require("express");
-const multer = require("multer");
-const cors = require("cors");
-const axios = require("axios");
-const FormData = require("form-data");
-const fs = require("fs");
-
+const express = require('express');
+const multer = require('multer');
+const axios = require('axios');
 const app = express();
-const upload = multer({ dest: "uploads/" });
-app.use(cors());
+const port = process.env.PORT || 3000;
 
-app.post("/render", upload.single("image"), async (req, res) => {
-try {
-const imagePath = req.file.path;
-const prompt = req.body.prompt;
+// Cấu hình multer để xử lý upload ảnh
+const upload = multer({ storage: multer.memoryStorage() });
 
-const form = new FormData();
-form.append("image", fs.createReadStream(imagePath));
-form.append("prompt", prompt);
+// Phục vụ file tĩnh từ thư mục public
+app.use(express.static('public'));
 
-const response = await axios.post(
-"https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2-1",
-form,
-{
-headers: {
-...form.getHeaders(),
-},
-responseType: "arraybuffer",
-}
-);
+// Route xử lý render ảnh
+app.post('/render', upload.single('image'), async (req, res) => {
+    try {
+        // Giả lập gọi API Replicate (thay bằng API key thật của bạn)
+        const replicateApiKey = process.env.REPLICATE_API_KEY; // Lưu API key trong biến môi trường
+        const response = await axios.post('https://api.replicate.com/v1/predictions', {
+            version: 'YOUR_MODEL_VERSION', // Thay bằng version của mô hình Stable Diffusion trên Replicate
+            input: {
+                image: req.file.buffer.toString('base64'),
+                prompt: 'High-quality architectural rendering, professional design, realistic lighting'
+            }
+        }, {
+            headers: {
+                'Authorization': `Token ${replicateApiKey}`,
+                'Content-Type': 'application/json'
+            }
+        });
 
-fs.unlinkSync(imagePath); // xóa ảnh sau khi dùng
-
-res.set("Content-Type", "image/png");
-res.send(response.data);
-} catch (err) {
-console.error(err.message);
-res.status(500).send("Lỗi khi render ảnh.");
-}
+        // Lấy URL ảnh render từ Replicate (giả lập, cần điều chỉnh theo API thực tế)
+        const imageUrl = response.data.output[0]; // Cần xử lý đúng theo response của Replicate
+        res.json({ imageUrl });
+    } catch (error) {
+        console.error('Lỗi render:', error);
+        res.status(500).json({ error: 'Không thể render ảnh' });
+    }
 });
 
-app.get("/", (req, res) => {
-res.send("Zudo Render Backend hoạt động!");
-});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-console.log(`Zudo Render backend chạy tại cổng ${PORT}`);
+app.listen(port, () => {
+    console.log(`Server chạy tại http://localhost:${port}`);
 });
