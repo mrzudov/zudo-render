@@ -1,0 +1,14 @@
+{
+    "name": "zudo-render",
+    "version": "1.0.0",
+    "description": "Website render ảnh phác thảo kiến trúc, nội thất, landscape",
+    "main": "src/server.js",
+    "scripts": {
+        "start": "node src/server.js"
+    },
+    "dependencies": {
+        "express": "^4.17.1",
+        "multer": "^2.0.0",
+        "axios": "^1.4.0"
+    }
+}
