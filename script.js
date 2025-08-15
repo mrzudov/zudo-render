@@ -1,41 +1,44 @@
-document.getElementById('uploadImage').addEventListener('change', function(event) {
-    const file = event.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            document.getElementById('originalImage').src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-    }
-});
+document.getElementById('renderForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
 
-document.getElementById('renderButton').addEventListener('click', async function() {
-    const fileInput = document.getElementById('uploadImage');
-    if (!fileInput.files[0]) {
-        alert('Vui lòng tải lên ảnh trước!');
+  const formData = new FormData();
+  formData.append('sketch', document.getElementById('sketch').files[0]);
+  formData.append('prompt', document.getElementById('prompt').value);
+
+  // Reset giao diện
+  document.getElementById('progress').style.width = '0%';
+  document.getElementById('progressText').textContent = '0%';
+  document.getElementById('originalImage').src = '';
+  document.getElementById('renderedImage').src = '';
+
+  try {
+    const response = await fetch('/render', {
+      method: 'POST',
+      body: formData
+    });
+    const { jobId } = await response.json();
+
+    // Polling tiến trình render
+    const poll = setInterval(async () => {
+      const statusResponse = await fetch(`/render-status/${jobId}`);
+      const status = await statusResponse.json();
+
+      if (status.error) {
+        alert(status.error);
+        clearInterval(poll);
         return;
-    }
+      }
 
-    const formData = new FormData();
-    formData.append('image', fileInput.files[0]);
+      document.getElementById('progress').style.width = `${status.progress}%`;
+      document.getElementById('progressText').textContent = `${status.progress}%`;
 
-    try {
-        const response = await fetch('/render', {
-            method: 'POST',
-            body: formData
-        });
-        const result = await response.json();
-
-        if (result.imageUrl) {
-            document.getElementById('renderedImage').src = result.imageUrl;
-            const downloadLink = document.getElementById('downloadLink');
-            downloadLink.href = result.imageUrl;
-            downloadLink.classList.remove('hidden');
-        } else {
-            alert('Không thể render ảnh. Vui lòng thử lại!');
-        }
-    } catch (error) {
-        console.error('Lỗi:', error);
-        alert('Đã có lỗi xảy ra. Vui lòng thử lại!');
-    }
+      if (status.progress >= 100) {
+        clearInterval(poll);
+        document.getElementById('originalImage').src = status.original;
+        document.getElementById('renderedImage').src = status.rendered;
+      }
+    }, 1000);
+  } catch (error) {
+    alert('Lỗi khi render. Vui lòng thử lại.');
+  }
 });
