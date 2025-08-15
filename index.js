@@ -1,21 +1,27 @@
 const express = require('express');
 const path = require('path');
 const multer = require('multer');
+const fs = require('fs');
 const app = express();
 
-// Cấu hình Multer để lưu trữ file ảnh tạm thời
+// Tạo thư mục uploads
+if (!fs.existsSync('uploads')) {
+  fs.mkdirSync('uploads');
+}
+
+// Cấu hình Multer
 const upload = multer({ dest: 'uploads/' });
 
 // Cung cấp file tĩnh
 app.use(express.static(path.join(__dirname, '/')));
 
-// Route chính để tránh lỗi "Cannot GET /"
+// Route chính
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Giả lập trạng thái render (thay bằng API thật)
-const renderJobs = new Map(); // Lưu trạng thái render theo jobId
+// Lưu trạng thái render
+const renderJobs = new Map();
 
 app.post('/render', upload.single('sketch'), (req, res) => {
   const prompt = req.body.prompt;
@@ -28,7 +34,7 @@ app.post('/render', upload.single('sketch'), (req, res) => {
   const jobId = Date.now().toString();
   renderJobs.set(jobId, { progress: 0, original: `/uploads/${file.filename}`, rendered: null });
 
-  // Giả lập gọi API render và cập nhật tiến trình (thay bằng API thật)
+  // Giả lập API render (thay bằng API thật)
   let progress = 0;
   const interval = setInterval(() => {
     progress += 20;
@@ -38,7 +44,7 @@ app.post('/render', upload.single('sketch'), (req, res) => {
       renderJobs.set(jobId, {
         ...renderJobs.get(jobId),
         progress: 100,
-        rendered: `/uploads/${file.filename}` // Thay bằng URL từ API render
+        rendered: `/uploads/${file.filename}`
       });
     }
   }, 1000);
@@ -46,7 +52,6 @@ app.post('/render', upload.single('sketch'), (req, res) => {
   res.json({ jobId });
 });
 
-// Route kiểm tra tiến trình render
 app.get('/render-status/:jobId', (req, res) => {
   const job = renderJobs.get(req.params.jobId);
   if (!job) {
@@ -55,7 +60,6 @@ app.get('/render-status/:jobId', (req, res) => {
   res.json(job);
 });
 
-// Khởi động server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server chạy trên cổng ${PORT}`);
